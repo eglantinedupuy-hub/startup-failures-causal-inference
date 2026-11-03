@@ -34,11 +34,25 @@ Produces `startups_clean.csv` (356 startups) from 6 raw Kaggle sector files:
 5. **Heterogeneous effects:** Explored how the estimated effect of funding varies by business model and era (e.g. larger for B2B startups, inconclusive for hardware).
 6. Repeated the identify → estimate → refute pipeline for the second treatment (`giants`).
 
-## Results
+## Main findings & charts
 
-- **Funding → lifespan:** A naive gap of 2.45 years shrinks to ~2.0–2.5 years once adjusted for confounders (2.21 years, linear regression, 95% CI 1.59–2.82; 2.02 years, XGBoost; 2.47 years, propensity score stratification). The effect survives random-confounder, placebo, and subset refutation tests, but is sensitive to a strong enough unobserved confounder.
-- **Tech giants → lifespan:** No detectable effect. The adjusted estimate is +0.44 years (95% CI −0.27 to 1.15, p = 0.23) — statistically indistinguishable from zero, and in the opposite direction from the original hypothesis.
-- Full writeup, caveats, and an AI-use disclosure are included in the main notebook.
+**The causal graph states the assumptions up front.** Every confounder (founding era, sector, business model) is modeled as affecting both the treatment (`high_funding`) and the outcome (`lifespan`); DoWhy uses this graph to identify a valid backdoor adjustment set before any effect is estimated.
+
+![Causal graph for the funding treatment](./images/causal_graph_funding.png)
+
+**Funding → lifespan: a real, moderate-sized effect.** The raw gap in average lifespan between high- and low-funded startups is 2.45 years, but high- and low-funded startups differ in sector, era, and business model, so that raw number is biased. After adjusting for confounders, every method agrees on an effect in the 2.0–2.5 year range: 2.21 years (linear regression, 95% CI 1.59–2.82), 2.02 years (XGBoost T-learner), and 2.47 years (propensity score stratification).
+
+**Tech giants → lifespan: no detectable effect.** The adjusted estimate is +0.44 years (95% CI −0.27 to 1.15, p = 0.23) — indistinguishable from zero, and even in the opposite direction from the original hypothesis that losing to a tech giant shortens a startup's life.
+
+**What actually drives the estimated funding effect.** In the XGBoost model, `founding_year` dominates feature importance (~0.52) — more than three times any other feature — meaning the estimated benefit of funding varies mostly with *when* a startup was founded, followed by `b2b` and `hardware` status. This is importance for explaining heterogeneity in the *effect*, not for predicting lifespan itself.
+
+![Feature importance for the estimated funding effect](./images/feature_importance.png)
+
+**How fragile is the funding result?** Three refutation tests (random common cause, placebo treatment, 90% data subset) all leave the funding estimate essentially unchanged — evidence it isn't an artifact of the specific model or sample. But a sensitivity analysis for an *unobserved* confounder shows the estimate would fall toward zero (and could even turn negative) if a strong enough hidden factor — e.g. unmeasured founder experience — were tied to both funding and lifespan.
+
+![Sensitivity to an unobserved confounder](./images/sensitivity_unobserved_confounder.png)
+
+Full writeup, subgroup (heterogeneous effect) results, and an AI-use disclosure are in the main notebook.
 
 ## Key limitations
 
@@ -57,6 +71,7 @@ Python, pandas, NumPy, statsmodels, [CausalML](https://github.com/uber/causalml)
 - [`cleaning_causal_inference_startups.ipynb`](./cleaning_causal_inference_startups.ipynb) — raw data cleaning, producing `startups_clean.csv`.
 - [`startups_clean.csv`](./startups_clean.csv) — the cleaned, modeling-ready dataset (356 rows).
 - [`EglantineDupuy_EDS_Assignment2.ipynb`](./EglantineDupuy_EDS_Assignment2.ipynb) — the full causal inference analysis.
+- [`images/`](./images) — charts exported from the notebook, embedded above.
 
 ## License note
 
